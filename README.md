@@ -57,10 +57,10 @@ El backend se inicia en `https://localhost:3000`, salvo que `PORT` esté definid
 
 ## Despliegue en Railway
 
-El `Dockerfile` de la raíz construye desde la raíz del repositorio para incluir también `FRON_END/`. En Railway:
+El `Dockerfile` de la raíz construye desde la raíz del repositorio para incluir también `FRON_END/`. Crea un proyecto en Railway y:
 
-1. Conecta el repositorio y deja vacía la opción **Root Directory**.
-2. Añade un servicio MySQL y asigna `DATABASE_URL` al valor privado de conexión de ese servicio.
+1. Añade un servicio desde el repositorio privado `davidcabezas238-droid/PLATAFORMA-INCIDENTES.2.0` y deja vacía la opción **Root Directory**.
+2. Añade un servicio MySQL. En las variables del servicio de la aplicación, define `DATABASE_URL=${{ MySQL.MYSQL_URL }}` (ajusta `MySQL` si cambiaste el nombre del servicio de base de datos).
 3. Define `JWT_SECRET` con un secreto aleatorio largo. En producción Railway termina HTTPS; la app escucha HTTP en el puerto `PORT` y no requiere el certificado local.
 4. Añade un volumen persistente montado en `/data` y configura `UPLOADS_DIR=/data/uploads`. Sin volumen, los adjuntos se perderían al recrear el contenedor.
 5. Despliega. Al arrancar, el contenedor sincroniza el esquema Prisma y expone `GET /healthz` como health check.
