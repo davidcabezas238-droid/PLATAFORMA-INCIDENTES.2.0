@@ -25,6 +25,7 @@ El registro de incidentes sigue el mismo flujo: las rutas delegan en `controller
 
 - Inicio de sesión con JWT y control de acceso por rol.
 - Crear, listar, filtrar, consultar, actualizar y eliminar incidentes.
+- Validar títulos de incidentes para aceptar únicamente letras y espacios (incluidas tildes y ñ).
 - Listar incidentes en páginas de 25 elementos (máximo 100), con totales agregados.
 - Adjuntar una imagen o un video al crear un incidente. Se admiten JPG, PNG, GIF, WebP, MP4, WebM y MOV, con un máximo de 25 MB por archivo.
 - En desarrollo, los archivos se guardan en `BACK-END/uploads/`; en el despliegue gratuito se almacenan en un bucket privado de Supabase Storage. La descarga se realiza por una ruta protegida con JWT.

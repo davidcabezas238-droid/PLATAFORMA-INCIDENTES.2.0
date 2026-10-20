@@ -79,7 +79,7 @@
 	<dialog class="incident-dialog" id="incidentDialog" aria-labelledby="dialogTitle">
 		<form id="incidentForm">
 			<div class="dialog-heading"><div><p class="eyebrow">REGISTRO DE SEGURIDAD</p><h2 id="dialogTitle">Nuevo incidente</h2></div><button class="close-button" id="closeDialogButton" type="button" aria-label="Cerrar">×</button></div>
-			<label>Título del incidente<input name="titulo" type="text" maxlength="100" required placeholder="Ej. Acceso no autorizado"></label>
+			<label>Título del incidente<input name="titulo" type="text" maxlength="100" pattern="[\p{L}]+(?:\s+[\p{L}]+)*" title="Usa solo letras y espacios, sin números ni caracteres especiales." required placeholder="Ej. Acceso no autorizado"><span class="field-hint">Usa solo letras y espacios; se permiten tildes y ñ.</span></label>
 			<label>Descripción<textarea name="descripcion" rows="4" maxlength="1200" placeholder="Describe el incidente (máximo 200 palabras)"></textarea></label>
 			<label>Imagen o video (opcional)<input id="incidentFile" name="archivo" type="file" accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm,video/quicktime"><span class="field-hint">JPG, PNG, GIF, WebP, MP4, WebM o MOV. Máximo 25 MB.</span></label>
 			<div class="attachment-preview" id="attachmentPreview" hidden></div>

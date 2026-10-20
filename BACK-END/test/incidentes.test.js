@@ -167,6 +167,37 @@ test('crear rechaza un titulo con etiquetas HTML', async () => {
   assert.match(respuesta.payload.error, /titulo no puede contener etiquetas HTML/i);
 });
 
+test('crear rechaza números en el título', async () => {
+  const respuesta = await ejecutarCrear({
+    titulo: 'Incidente 2026',
+    prioridad: 'Alta',
+  });
+
+  assert.equal(respuesta.statusCode, 400);
+  assert.match(respuesta.payload.error, /solo puede contener letras y espacios/i);
+});
+
+test('crear rechaza caracteres especiales en el título', async () => {
+  const respuesta = await ejecutarCrear({
+    titulo: 'Acceso no autorizado!',
+    prioridad: 'Alta',
+  });
+
+  assert.equal(respuesta.statusCode, 400);
+  assert.match(respuesta.payload.error, /solo puede contener letras y espacios/i);
+});
+
+test('crear acepta tildes y ñ en el título', async () => {
+  const respuesta = await ejecutarCrear({
+    titulo: 'Infección dañó información',
+    prioridad: 'Alta',
+    estado: 'Registrado',
+  });
+
+  assert.equal(respuesta.statusCode, 201);
+  assert.equal(respuesta.payload.titulo, 'Infección dañó información');
+});
+
 test('crear rechaza una descripcion con más de 200 palabras', async () => {
   const descripcion = Array.from({ length: 201 }, (_, index) => `palabra${index + 1}`).join(' ');
 

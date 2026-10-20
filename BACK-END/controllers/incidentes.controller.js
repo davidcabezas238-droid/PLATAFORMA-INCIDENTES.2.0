@@ -100,6 +100,9 @@ function validarDatos(body, estadoPredeterminado) {
     if (/[<>]/.test(titulo)) {
         return { error: "titulo no puede contener etiquetas HTML" };
     }
+    if (!/^[\p{L}]+(?:\s+[\p{L}]+)*$/u.test(titulo)) {
+        return { error: "titulo solo puede contener letras y espacios, sin números ni caracteres especiales" };
+    }
     if (descripcion && /[<>]/.test(descripcion)) {
         return { error: "descripcion no puede contener etiquetas HTML" };
     }
