@@ -1,9 +1,12 @@
--- CreateTable
-CREATE TABLE `Incidente` (
-    `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `titulo` VARCHAR(191) NOT NULL,
-    `prioridad` VARCHAR(191) NOT NULL,
-    `estado` VARCHAR(191) NOT NULL DEFAULT 'abierto',
+CREATE TABLE "Incidente" (
+    "id" SERIAL NOT NULL,
+    "titulo" TEXT NOT NULL,
+    "descripcion" TEXT,
+    "prioridad" TEXT NOT NULL,
+    "estado" TEXT NOT NULL DEFAULT 'abierto',
+    "archivoRuta" TEXT,
+    "archivoNombre" TEXT,
+    "archivoMime" TEXT,
 
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    CONSTRAINT "Incidente_pkey" PRIMARY KEY ("id")
+);

@@ -1,14 +1,20 @@
 const { PrismaClient } = require("@prisma/client");
-const { PrismaMariaDb } = require("@prisma/adapter-mariadb");
+const { PrismaPg } = require("@prisma/adapter-pg");
+require("dotenv").config();
+
+if (!process.env.DATABASE_URL) {
+    throw new Error("Define DATABASE_URL antes de iniciar la aplicación");
+}
 
 const databaseUrlString = process.env.DATABASE_URL || "mysql://root:docker123!@localhost:3306/incidentesdeseguridad_db";
 const databaseUrl = new URL(databaseUrlString);
-const adapter = new PrismaMariaDb({
-    host: databaseUrl.hostname,
-    port: Number(databaseUrl.port || 3306),
-    user: databaseUrl.username,
-    password: databaseUrl.password,
-    database: databaseUrl.pathname.replace("/", ""),
+if (!["postgres:", "postgresql:"].includes(databaseUrl.protocol)) {
+    throw new Error("DATABASE_URL debe ser una URI de PostgreSQL");
+}
+
+const adapter = new PrismaPg({
+    connectionString: databaseUrl.href,
+    max: Number(process.env.DATABASE_POOL_SIZE || 5),
 });
 
 const prisma = new PrismaClient({ adapter });
@@ -28,15 +34,15 @@ async function listar(filtros = {}) {
     if (termino) {
         condiciones.push({
             OR: [
-                { titulo: { contains: termino } },
-                { descripcion: { contains: termino } },
-                { prioridad: { contains: termino } },
-                { estado: { contains: termino } },
+                { titulo: { contains: termino, mode: "insensitive" } },
+                { descripcion: { contains: termino, mode: "insensitive" } },
+                { prioridad: { contains: termino, mode: "insensitive" } },
+                { estado: { contains: termino, mode: "insensitive" } },
             ],
         });
     }
-    if (prioridad) condiciones.push({ prioridad: { equals: prioridad } });
-    if (estado) condiciones.push({ estado: { equals: estado } });
+    if (prioridad) condiciones.push({ prioridad: { equals: prioridad, mode: "insensitive" } });
+    if (estado) condiciones.push({ estado: { equals: estado, mode: "insensitive" } });
 
     const where = condiciones.length ? { AND: condiciones } : undefined;
     const [items, total, gruposPorEstado] = await Promise.all([

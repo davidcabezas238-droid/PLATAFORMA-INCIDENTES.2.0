@@ -236,6 +236,18 @@ test('crear permite subir y descargar un adjunto autenticado', async () => {
     assert.equal('archivoRuta' in incidente, false);
     incidenteId = incidente.id;
 
+    const archivoInvalido = new FormData();
+    archivoInvalido.append('titulo', 'Incidente con archivo inválido');
+    archivoInvalido.append('prioridad', 'Baja');
+    archivoInvalido.append('estado', 'Registrado');
+    archivoInvalido.append('archivo', new Blob(['esto no es una imagen'], { type: 'image/png' }), 'invalido.png');
+    const respuestaArchivoInvalido = await fetch(`${baseUrl}/incidentes`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: archivoInvalido,
+    });
+    assert.equal(respuestaArchivoInvalido.status, 400);
+
     const descarga = await fetch(`${baseUrl}/incidentes/${incidenteId}/archivo`, {
       headers: { Authorization: `Bearer ${token}` },
     });

@@ -1,20 +1,16 @@
 require("dotenv").config();
 
 const { PrismaClient } = require("@prisma/client");
-const { PrismaMariaDb } = require("@prisma/adapter-mariadb");
+const { PrismaPg } = require("@prisma/adapter-pg");
 
 if (!process.env.DATABASE_URL) {
     throw new Error("Define DATABASE_URL antes de ejecutar el benchmark");
 }
 
-const databaseUrl = new URL(process.env.DATABASE_URL);
 const prisma = new PrismaClient({
-    adapter: new PrismaMariaDb({
-        host: databaseUrl.hostname,
-        port: Number(databaseUrl.port || 3306),
-        user: databaseUrl.username,
-        password: databaseUrl.password,
-        database: databaseUrl.pathname.replace("/", ""),
+    adapter: new PrismaPg({
+        connectionString: process.env.DATABASE_URL,
+        max: Number(process.env.DATABASE_POOL_SIZE || 5),
     }),
 });
 const select = {

@@ -1,9 +1,8 @@
-const fs = require("node:fs/promises");
 const path = require("node:path");
 const { randomUUID } = require("node:crypto");
 const modelo = require("../modelos/incidentes.model");
+const almacenamientoAdjuntos = require("../services/adjuntos");
 
-const directorioAdjuntos = process.env.UPLOADS_DIR || path.join(__dirname, "../uploads");
 const tiposPermitidos = new Set([
     "image/jpeg",
     "image/png",
@@ -15,12 +14,12 @@ const tiposPermitidos = new Set([
 ]);
 
 async function eliminarArchivo(ruta) {
-    if (ruta) await fs.unlink(ruta).catch(() => {});
+    if (ruta) await almacenamientoAdjuntos.eliminarAdjunto(ruta);
 }
 
 async function guardarAdjunto(archivo) {
-    const { fileTypeFromFile } = await import("file-type");
-    const tipoDetectado = await fileTypeFromFile(archivo.path);
+    const { fileTypeFromBuffer } = await import("file-type");
+    const tipoDetectado = await fileTypeFromBuffer(archivo.buffer);
     if (!tipoDetectado || !tiposPermitidos.has(tipoDetectado.mime)) {
         const error = new Error("El contenido no corresponde a una imagen o video compatible");
         error.statusCode = 400;
@@ -28,15 +27,14 @@ async function guardarAdjunto(archivo) {
     }
 
     const archivoRuta = `${randomUUID()}.${tipoDetectado.ext}`;
-    const rutaDestino = path.join(directorioAdjuntos, archivoRuta);
-    await fs.rename(archivo.path, rutaDestino);
+    await almacenamientoAdjuntos.guardarAdjunto(archivoRuta, archivo.buffer, tipoDetectado.mime);
     const nombreOriginal = path.basename(archivo.originalname.replace(/\\/g, "/"));
     // eslint-disable-next-line no-control-regex -- elimina caracteres de control del nombre del archivo
     const archivoNombre = nombreOriginal.replace(/[\u0000-\u001F\u007F]/g, "")
         .slice(0, 180) || `adjunto.${tipoDetectado.ext}`;
 
     return {
-        rutaDestino,
+        rutaDestino: archivoRuta,
         datos: {
             archivoRuta,
             archivoNombre,
@@ -160,7 +158,6 @@ async function obtener(req, res) {
 async function crear(req, res) {
     const resultado = validarDatos(req.body, "Registrado");
     if (resultado.error) {
-        await eliminarArchivo(req.file?.path);
         return res.status(400).json({ error: resultado.error });
     }
 
@@ -171,8 +168,13 @@ async function crear(req, res) {
         const incidente = await modelo.crear({ ...resultado.datos, ...adjunto.datos });
         res.status(201).json(ocultarRutaAdjunto(incidente));
     } catch (error) {
-        await eliminarArchivo(req.file?.path);
-        await eliminarArchivo(rutaAdjuntoGuardado);
+        if (rutaAdjuntoGuardado) {
+            try {
+                await eliminarArchivo(rutaAdjuntoGuardado);
+            } catch (cleanupError) {
+                console.error("No se pudo limpiar un adjunto tras fallar el registro", cleanupError);
+            }
+        }
         res.status(error.statusCode || 500).json({ error: error.message });
     }
 }
@@ -206,7 +208,7 @@ async function eliminar(req, res) {
             return res.status(404).json({ error: "Incidente no encontrado" });
         }
         if (incidente.archivoRuta) {
-            await eliminarArchivo(path.join(directorioAdjuntos, path.basename(incidente.archivoRuta)));
+            await eliminarArchivo(incidente.archivoRuta);
         }
         res.status(204).send();
     } catch (error) {
@@ -224,12 +226,8 @@ async function obtenerArchivo(req, res) {
             return res.status(404).json({ error: "El incidente no tiene un archivo adjunto" });
         }
 
-        const ruta = path.join(directorioAdjuntos, path.basename(incidente.archivoRuta));
-        res.type(incidente.archivoMime).sendFile(ruta, (error) => {
-            if (error && !res.headersSent) {
-                res.status(error.statusCode || 500).json({ error: "No se pudo leer el archivo adjunto" });
-            }
-        });
+        const archivo = await almacenamientoAdjuntos.leerAdjunto(incidente.archivoRuta);
+        res.type(incidente.archivoMime).send(archivo);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
