@@ -1,4 +1,5 @@
-const BASE_URL = window.BACKEND_URL || "https://localhost:3000";
+const esDesarrolloLocal = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+const BASE_URL = window.BACKEND_URL || (esDesarrolloLocal ? "https://localhost:3000" : window.location.origin);
 
 async function enviar(ruta, opciones = {}) {
   const token = sessionStorage.getItem("token");
