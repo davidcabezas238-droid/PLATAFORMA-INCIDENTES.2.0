@@ -11,6 +11,7 @@ const acceso = document.querySelector("#accessState");
 const panel = document.querySelector("#dashboard");
 const cuenta = document.querySelector("#accountArea");
 const cuentaLabel = document.querySelector("#accountLabel");
+const gestionUsuarios = document.querySelector("#userManagementLink");
 const filas = document.querySelector("#incidentRows");
 const vacio = document.querySelector("#emptyState");
 const dialogo = document.querySelector("#incidentDialog");
@@ -242,6 +243,7 @@ async function iniciar() {
     panel.hidden = false;
     cuenta.hidden = false;
     cuentaLabel.textContent = `${usuario.correo} · ${rolEtiqueta[usuario.rol] || usuario.rol}`;
+    gestionUsuarios.hidden = usuario.rol !== "admin";
     await cargarIncidentes();
   } catch {
     sessionStorage.removeItem("token");

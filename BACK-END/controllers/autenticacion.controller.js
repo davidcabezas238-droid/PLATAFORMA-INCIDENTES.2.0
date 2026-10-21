@@ -12,8 +12,8 @@ async function iniciarSesion(req, res) {
         return res.status(400).json({ error: "Correo y clave son obligatorios" });
     }
 
-    const usuario = await usuariosModelo.buscarPorCorreo(correo.trim());
-    if (!usuario || !(await bcrypt.compare(clave, usuario.clave))) {
+    const usuario = await usuariosModelo.buscarPorCorreo(correo.trim().toLowerCase());
+    if (!usuario || !usuario.activo || !(await bcrypt.compare(clave, usuario.clave))) {
         return res.status(401).json({ error: "Credenciales inválidas" });
     }
 
@@ -22,16 +22,16 @@ async function iniciarSesion(req, res) {
     }
 
     const token = jwt.sign(
-        { correo: usuario.correo, rol: usuario.rol },
+        { correo: usuario.correo },
         process.env.JWT_SECRET,
-        { expiresIn: "1h" },
+        { subject: String(usuario.id), expiresIn: "1h" },
     );
 
     return res.json({ token });
 }
 
 function obtenerSesion(req, res) {
-    return res.json({ correo: req.usuario.correo, rol: req.usuario.rol });
+    return res.json({ id: req.usuario.id, correo: req.usuario.correo, rol: req.usuario.rol });
 }
 
 module.exports = { iniciarSesion, obtenerSesion };

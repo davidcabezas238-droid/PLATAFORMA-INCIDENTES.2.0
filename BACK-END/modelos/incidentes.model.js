@@ -1,23 +1,4 @@
-const { PrismaClient } = require("@prisma/client");
-const { PrismaPg } = require("@prisma/adapter-pg");
-require("dotenv").config();
-
-if (!process.env.DATABASE_URL) {
-    throw new Error("Define DATABASE_URL antes de iniciar la aplicación");
-}
-
-const databaseUrlString = process.env.DATABASE_URL || "mysql://root:docker123!@localhost:3306/incidentesdeseguridad_db";
-const databaseUrl = new URL(databaseUrlString);
-if (!["postgres:", "postgresql:"].includes(databaseUrl.protocol)) {
-    throw new Error("DATABASE_URL debe ser una URI de PostgreSQL");
-}
-
-const adapter = new PrismaPg({
-    connectionString: databaseUrl.href,
-    max: Number(process.env.DATABASE_POOL_SIZE || 5),
-});
-
-const prisma = new PrismaClient({ adapter });
+const prisma = require("./prisma");
 
 function normalizarBusqueda(valor) {
     return String(valor ?? "").trim().toLowerCase();
@@ -143,4 +124,4 @@ async function eliminar(id) {
     }
 }
 
-module.exports = { listar, buscarPorId, crear, actualizar, eliminar };
+module.exports = { listar, buscarPorId, crear, actualizar, eliminar, prisma };

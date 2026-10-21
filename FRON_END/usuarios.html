@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="es">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="theme-color" content="#edf2ef">
+	<title>Usuarios | Centro de operaciones</title>
+	<link rel="icon" href="./favicon.svg" type="image/svg+xml">
+	<link rel="stylesheet" href="./app.css">
+	<script type="module" src="./usuarios.js"></script>
+</head>
+<body>
+	<header class="topbar">
+		<a class="brand" href="./index.html" aria-label="Volver al registro de incidentes">
+			<span class="brand-mark" aria-hidden="true">IO</span>
+			<span>Incidentes<span class="brand-subtitle">Centro de operaciones</span></span>
+		</a>
+		<a class="button button-quiet" href="./index.html">Volver a incidentes</a>
+	</header>
+	<main class="page-shell">
+		<section class="page-heading">
+			<div>
+				<p class="eyebrow">ADMINISTRACIÓN</p>
+				<h1>Usuarios</h1>
+				<p class="muted">Registra cuentas de acceso y administra sus roles y estados.</p>
+			</div>
+		</section>
+		<p class="feedback" id="feedback" role="status" aria-live="polite" hidden></p>
+		<section class="user-panel" id="userPanel" hidden>
+			<form class="user-form" id="userForm">
+				<h2>Registrar usuario</h2>
+				<label>Correo electrónico<input name="correo" type="email" maxlength="254" autocomplete="off" required></label>
+				<label>Contraseña<input name="clave" type="password" minlength="12" maxlength="128" autocomplete="new-password" required><span class="field-hint">Usa una contraseña única de 12 a 128 caracteres y compártela de forma segura.</span></label>
+				<label>Rol<select name="rol" required><option value="tecnico" selected>Técnico</option><option value="admin">Administrador</option></select></label>
+				<button class="button button-primary" id="createUserButton" type="submit">Registrar usuario</button>
+			</form>
+		</section>
+		<section class="registry user-registry" id="userRegistry" hidden aria-labelledby="userListTitle">
+			<div class="registry-heading">
+				<div><h2 id="userListTitle">Cuentas registradas</h2><p class="muted" id="userCount"></p></div>
+				<button class="button button-quiet" id="refreshUsersButton" type="button">Actualizar</button>
+			</div>
+			<div class="table-wrap">
+				<table>
+					<thead><tr><th scope="col">Correo</th><th scope="col">Rol</th><th scope="col">Estado</th><th scope="col">Acciones</th></tr></thead>
+					<tbody id="userRows"></tbody>
+				</table>
+			</div>
+		</section>
+	</main>
+</body>
+</html>

@@ -1,10 +1,46 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { once } = require('node:events');
+const { before, after } = require('node:test');
+const { randomUUID } = require('node:crypto');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 const { crear, listar } = require('../controllers/incidentes.controller');
 const modelo = require('../modelos/incidentes.model');
+const usuariosModelo = require('../modelos/usuarios.model');
 const app = require('../index');
+let usuarioAdministrador;
+let administradorReserva;
+let incidentePhishing;
+const incidentesDePrueba = new Set();
+
+before(async () => {
+  usuarioAdministrador = await usuariosModelo.crear({
+    correo: `incidentes.admin.${randomUUID()}@example.invalid`,
+    clave: await bcrypt.hash('PruebaSegura-2026!', 12),
+    rol: 'admin',
+    activo: true,
+  });
+  administradorReserva = await usuariosModelo.crear({
+    correo: `incidentes.reserva.${randomUUID()}@example.invalid`,
+    clave: await bcrypt.hash('ReservaSegura-2026!', 12),
+    rol: 'admin',
+    activo: true,
+  });
+  incidentePhishing = await modelo.crear({
+    titulo: 'Phishing de prueba',
+    descripcion: 'Incidente de phishing creado por la suite de pruebas',
+    prioridad: 'Alta',
+    estado: 'Registrado',
+  });
+});
+
+after(async () => {
+  for (const id of incidentesDePrueba) await modelo.eliminar(id);
+  if (incidentePhishing) await modelo.eliminar(incidentePhishing.id);
+  if (usuarioAdministrador) await usuariosModelo.eliminar(usuarioAdministrador.id);
+  if (administradorReserva) await usuariosModelo.eliminar(administradorReserva.id);
+});
 
 function ejecutarCrear(body) {
   return new Promise((resolve) => {
@@ -26,7 +62,10 @@ function ejecutarCrear(body) {
       },
     };
 
-    crear(req, res).then(() => resolve({ statusCode, payload })).catch((error) => {
+    crear(req, res).then(() => {
+      if (statusCode === 201 && payload?.id) incidentesDePrueba.add(payload.id);
+      resolve({ statusCode, payload });
+    }).catch((error) => {
       resolve({ statusCode, payload: { error: error.message } });
     });
   });
@@ -122,6 +161,7 @@ test('crear acepta un incidente con titulo', async () => {
   assert.equal(payload.descripcion, 'Ataque por correo falso con enlaces sospechosos y solicitud urgente de credenciales.');
   assert.equal(payload.prioridad, 'Alta');
   assert.equal(payload.estado, 'Registrado');
+  incidentesDePrueba.add(payload.id);
 });
 
 test('listar filtra por texto, prioridad y estado juntos', async () => {
@@ -232,7 +272,11 @@ test('crear permite subir y descargar un adjunto autenticado', async () => {
   try {
     await once(servidor, 'listening');
     baseUrl = `http://127.0.0.1:${servidor.address().port}`;
-    const token = jwt.sign({ correo: 'prueba@example.invalid', rol: 'admin' }, process.env.JWT_SECRET);
+    const token = jwt.sign(
+      { correo: usuarioAdministrador.correo },
+      process.env.JWT_SECRET,
+      { subject: String(usuarioAdministrador.id) },
+    );
     const sesion = await fetch(`${baseUrl}/sesion`, {
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -302,7 +346,11 @@ test('crear permite subir y descargar un adjunto autenticado', async () => {
     incidenteId = null;
   } finally {
     if (incidenteId) {
-      const token = jwt.sign({ correo: 'prueba@example.invalid', rol: 'admin' }, process.env.JWT_SECRET);
+      const token = jwt.sign(
+        { correo: usuarioAdministrador.correo },
+        process.env.JWT_SECRET,
+        { subject: String(usuarioAdministrador.id) },
+      );
       await fetch(`${baseUrl}/${incidenteId}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },

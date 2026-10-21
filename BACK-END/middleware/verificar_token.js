@@ -1,25 +1,39 @@
 const jwt = require("jsonwebtoken");
+const usuariosModelo = require("../modelos/usuarios.model");
 
-function verificarToken(req, res, next) {
- res.set("Cache-Control", "no-store");
- // Ignore validators from old cached responses for authenticated data.
- delete req.headers["if-none-match"];
- delete req.headers["if-modified-since"];
- const encabezado = req.headers.authorization;
+async function verificarToken(req, res, next) {
+    res.set("Cache-Control", "no-store");
+    delete req.headers["if-none-match"];
+    delete req.headers["if-modified-since"];
+    const encabezado = req.headers.authorization;
 
- if (!encabezado || !encabezado.startsWith("Bearer ")) {
- return res.status(401).json({ error: "Token no proporcionado" });
- }
+    if (!encabezado || !encabezado.startsWith("Bearer ")) {
+        return res.status(401).json({ error: "Token no proporcionado" });
+    }
 
- const token = encabezado.split(" ")[1];
+    let payload;
+    try {
+        payload = jwt.verify(encabezado.slice("Bearer ".length), process.env.JWT_SECRET);
+    } catch {
+        return res.status(401).json({ error: "Token inválido o expirado" });
+    }
 
- try {
- const payload = jwt.verify(token, process.env.JWT_SECRET);
- req.usuario = payload; // { correo, rol, iat, exp }
- next();
- } catch {
- return res.status(401).json({ error: "Token inválido o expirado" });
- }
- }
+    try {
+        const usuario = Number.isInteger(Number(payload.sub))
+            ? await usuariosModelo.buscarPorId(Number(payload.sub))
+            : null;
+        if (!usuario || !usuario.activo) {
+            return res.status(401).json({ error: "La cuenta no existe o está desactivada" });
+        }
+        req.usuario = {
+            id: usuario.id,
+            correo: usuario.correo,
+            rol: usuario.rol,
+        };
+        return next();
+    } catch (error) {
+        return next(error);
+    }
+}
 
 module.exports = verificarToken;

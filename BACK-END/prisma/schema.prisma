@@ -16,3 +16,12 @@ model Incidente {
   archivoNombre String?
   archivoMime   String?
 }
+
+model Usuario {
+  id        Int      @id @default(autoincrement())
+  correo    String   @unique
+  clave     String
+  rol       String   @default("tecnico")
+  activo    Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
