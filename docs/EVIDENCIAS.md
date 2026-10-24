@@ -9,6 +9,8 @@ Registro actualizado el **24 de octubre de 2026**. Distingue entre comprobacione
 - **Rama:** `main`
 - **Commit de configuración PostgreSQL Render:** [`1c0df5d`](https://github.com/davidcabezas238-droid/PLATAFORMA-INCIDENTES.2.0/commit/1c0df5d7b77685d7ad08e7b6accf64ea15a498f1)
 - **Ejecución CI para el commit:** [GitHub Actions — CI exitosa](https://github.com/davidcabezas238-droid/PLATAFORMA-INCIDENTES.2.0/actions/runs/40128839844)
+- **Informe técnico PDF:** [INFORME-TECNICO.pdf](./INFORME-TECNICO.pdf) · [fuente HTML](./INFORME-TECNICO.html)
+- **Captura de Render:** [servicio desplegado y PostgreSQL disponible](./evidencias/render-servicio-y-postgres.png)
 - **Documentación técnica:** [ARQUITECTURA-TECNICA.md](./ARQUITECTURA-TECNICA.md)
 - **Manual de usuario:** [MANUAL-USUARIO.md](./MANUAL-USUARIO.md)
 - **Guion de defensa:** [DEFENSA.md](./DEFENSA.md)
@@ -22,6 +24,7 @@ Registro actualizado el **24 de octubre de 2026**. Distingue entre comprobacione
 | Repositorio versionado y rama de entrega | [Repositorio](https://github.com/davidcabezas238-droid/PLATAFORMA-INCIDENTES.2.0), rama `main`, commit [`e89f9c9`](https://github.com/davidcabezas238-droid/PLATAFORMA-INCIDENTES.2.0/commit/e89f9c990369f313c10df9374413494b5c683744) | **Verificada en remoto** |
 | Despliegue actual disponible | El sitio sirve la aplicación desde Render; respuestas HTTPS `200` observadas después de sincronizar el Blueprint el 24-10-2026 | **Verificado en vivo** |
 | Blueprint con base PostgreSQL Render | El usuario confirmó que la sincronización terminó; [`/healthz`](https://plataforma-incidentes-ggeo.onrender.com/healthz) completó una consulta a la base conectada | **Sincronizado; conectividad de base verificada** |
+| Panel de Render: servicio y base | [Captura proporcionada por el usuario](./evidencias/render-servicio-y-postgres.png), con `plataforma-incidentes` **Deployed** y `plataforma-incidentes-db` **Available** | **Evidencia visual incluida** |
 | Health check | [`/healthz`](https://plataforma-incidentes-ggeo.onrender.com/healthz) respondió `200` y `{"status":"ok"}` después de la sincronización, el 24-10-2026 | **Verificado en vivo** |
 | Página de acceso y administración | [`/login.html`](https://plataforma-incidentes-ggeo.onrender.com/login.html) y [`/usuarios.html`](https://plataforma-incidentes-ggeo.onrender.com/usuarios.html) respondieron `200` | **Verificadas en vivo** |
 | Protección de la API de usuarios | [`/usuarios`](https://plataforma-incidentes-ggeo.onrender.com/usuarios) respondió `401` sin token el 24-10-2026 | **Verificada en vivo** |
@@ -34,6 +37,7 @@ Registro actualizado el **24 de octubre de 2026**. Distingue entre comprobacione
 | Bucket privado de Supabase | La configuración debe verificarse en el panel autenticado de Supabase. No se dispone aquí de una captura del panel | **Captura del panel pendiente** |
 | Logs del servicio y estado Live en Render | La aplicación y su health check responden, pero no se ha capturado la vista autenticada de logs/despliegue de Render | **Captura del panel pendiente** |
 | Documentación técnica y manual | [Documentación técnica](./ARQUITECTURA-TECNICA.md) y [manual de usuario](./MANUAL-USUARIO.md) incluidos en el repositorio | **Completados** |
+| Informe técnico de integración y despliegue | [Informe PDF](./INFORME-TECNICO.pdf), generado a partir de evidencias del repositorio, CI y verificaciones en vivo | **Completado** |
 | Presentación y ensayo de demostración | [Presentación](./PRESENTACION.html) y [guion](./DEFENSA.md) disponibles. El ensayo debe realizarse antes de la exposición | **Material completado; ensayo pendiente** |
 
 ## Capturas que faltan para cerrar la carpeta de entrega

@@ -113,4 +113,4 @@ Los endpoints de incidentes requieren `Authorization: Bearer <token>`.
 - `npm test -- --test-force-exit --test-concurrency=1 --test-reporter=spec` ejecuta pruebas de reglas de negocio, usuarios, autorización, persistencia y adjuntos en serie. Requiere una base PostgreSQL de pruebas configurada en `BACK-END/.env`.
 - `GET /healthz` comprueba disponibilidad de la aplicación y conectividad con PostgreSQL.
 
-Consulta [la documentación técnica](./docs/ARQUITECTURA-TECNICA.md), [el manual de usuario](./docs/MANUAL-USUARIO.md), [la guía de defensa](./docs/DEFENSA.md), [la presentación](./docs/PRESENTACION.html) y [la lista de evidencias](./docs/EVIDENCIAS.md).
+Consulta el [informe técnico en PDF](./docs/INFORME-TECNICO.pdf), su [fuente HTML](./docs/INFORME-TECNICO.html), la [documentación técnica](./docs/ARQUITECTURA-TECNICA.md), el [manual de usuario](./docs/MANUAL-USUARIO.md), la [guía de defensa](./docs/DEFENSA.md), la [presentación](./docs/PRESENTACION.html) y la [lista de evidencias](./docs/EVIDENCIAS.md).
