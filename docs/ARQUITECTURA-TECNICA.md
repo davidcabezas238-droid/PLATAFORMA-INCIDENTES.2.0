@@ -2,7 +2,7 @@
 
 ## Resumen
 
-Plataforma web para registrar y administrar incidentes de seguridad. El frontend estático (HTML, CSS y JavaScript) y la API REST de Express se sirven desde el mismo origen. PostgreSQL guarda los incidentes y las cuentas; Supabase Storage conserva los adjuntos en un bucket privado.
+Plataforma web para registrar y administrar incidentes de seguridad. El frontend estático (HTML, CSS y JavaScript) y la API REST de Express se sirven desde el mismo origen. Render PostgreSQL guarda los incidentes y las cuentas; Supabase Storage conserva los adjuntos en un bucket privado.
 
 ## Componentes y flujo
 
@@ -51,11 +51,14 @@ Registra título, descripción, prioridad, estado y metadatos del adjunto. La ru
 
 ## Despliegue y seguridad del transporte
 
-- Render Free ejecuta el contenedor Docker y termina TLS/HTTPS delante de la aplicación.
-- Supabase aloja PostgreSQL y el bucket privado para los adjuntos.
+- Render ejecuta el contenedor Docker, termina TLS/HTTPS delante de la aplicación y aloja PostgreSQL.
+- Supabase Storage conserva el bucket privado de adjuntos; Supabase PostgreSQL ya no es la base conectada por el servicio.
+- El Blueprint declara `plataforma-incidentes-db` y enlaza su `connectionString` a `DATABASE_URL` y `DIRECT_URL`. En un Blueprint existente, se debe sincronizar/aplicar el cambio para que Render cree la base nueva; un despliegue manual del servicio por sí solo no crea recursos de base definidos por el Blueprint.
 - Las URL y claves se configuran como variables de entorno en el panel del proveedor, nunca en Git.
-- La migración `20261021000000_add_users` crea la tabla de cuentas. No importa usuarios ni datos del despliegue MySQL anterior.
+- Las migraciones Prisma se aplican al iniciar. El Blueprint conecta `DATABASE_URL` y `DIRECT_URL` a la base PostgreSQL creada en Render.
+- La base nueva no importa usuarios, incidentes ni metadatos de adjuntos de la base Supabase anterior. La base Supabase antigua permanece separada y no se elimina por este cambio.
 - El disco del servicio Render Free es efímero; por eso los adjuntos de producción se guardan en Supabase Storage.
+- La base PostgreSQL gratuita de Render tiene límites y expira a los 30 días según sus condiciones actuales; puede ser necesario actualizarla a un plan pago para conservar el acceso. No usar para producción y exportar datos necesarios antes de su expiración.
 
 ## Configuración
 

@@ -1,6 +1,6 @@
 # Plataforma de incidentes
 
-Aplicación de registro de incidentes de seguridad. El frontend es HTML, CSS y JavaScript modular; el backend es una API Express que utiliza Prisma 7 y PostgreSQL en Supabase.
+Aplicación de registro de incidentes de seguridad. El frontend es HTML, CSS y JavaScript modular; el backend es una API Express que utiliza Prisma 7 y PostgreSQL administrado por Render. Supabase Storage mantiene los adjuntos en un bucket privado.
 
 ## Arquitectura
 
@@ -64,25 +64,24 @@ npm start
 
 El backend se inicia en `https://localhost:3000`, salvo que `PORT` esté definido en el entorno. El mismo servidor Express entrega el frontend estático desde `FRON_END/`. La base de datos de pruebas debe ser PostgreSQL separada de producción; `npm test` crea y elimina cuentas e incidentes temporales.
 
-## Despliegue gratuito de demostración: Render + Supabase
+## Despliegue gratuito de demostración: Render PostgreSQL + Supabase Storage
 
-La raíz incluye un `render.yaml` para desplegar el servicio web gratuito desde el repositorio. Los límites de los planes gratuitos pueden cambiar:
+La raíz incluye un `render.yaml` para desplegar el servicio web y la base PostgreSQL administrada por Render. Supabase se utiliza únicamente para el bucket privado de adjuntos. **La base gratuita de Render vence a los 30 días**; después queda inaccesible hasta actualizarla a un plan pagado y, tras el periodo de gracia de Render, se elimina junto con sus datos. Comprueba las condiciones actuales antes de usarla:
 
-1. Crea un proyecto gratuito en Supabase.
-2. En **Storage**, crea el bucket privado `evidencias-incidentes`. No lo hagas público: la API descarga cada archivo solo después de verificar el JWT.
-3. En **Connect**, selecciona el **Session pooler** y copia la URI PostgreSQL. Úsala para `DATABASE_URL` y `DIRECT_URL`; en el formulario sustituye la contraseña de ejemplo por la contraseña de base de datos. No compartas estas cadenas ni la clave `service_role`.
-4. En Supabase, copia la **Project URL** y la clave secreta `service_role` desde la configuración de API.
-5. En Render, selecciona **New > Blueprint** y conecta `davidcabezas238-droid/PLATAFORMA-INCIDENTES.2.0`. Revisa y confirma el servicio gratuito `plataforma-incidentes`. El `Dockerfile` de la raíz incluye el backend y `FRON_END/`; el servicio aplica la migración Prisma al arrancar y usa `/healthz` como health check.
-6. En las variables del servicio Render, completa `DATABASE_URL`, `DIRECT_URL`, `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY` con los valores de Supabase. Conserva `STORAGE_DRIVER=supabase` y el nombre del bucket configurado por el Blueprint. `JWT_SECRET` se genera automáticamente.
-7. En Render, configura `INITIAL_ADMIN_EMAIL` y `INITIAL_ADMIN_PASSWORD` como variables secretas del servicio y vuelve a desplegar. Usa una contraseña única de al menos 12 caracteres. En un servicio Blueprint ya creado, añade estas variables desde **Environment** si no aparecen al sincronizar el Blueprint.
-8. Al iniciar, Render aplica la migración y crea el administrador solo si aún no existe uno activo. Comprueba que `/healthz` responda `200` y accede con el correo y contraseña configurados. Cuando el primer administrador ya se haya creado, elimina las variables `INITIAL_ADMIN_EMAIL` y `INITIAL_ADMIN_PASSWORD` de Render para reducir la exposición de secretos.
-9. Espera a que termine el despliegue y abre la URL pública de Render. La primera respuesta puede tardar porque el servicio gratuito entra en suspensión tras 15 minutos sin tráfico.
+1. En Supabase, conserva el proyecto existente y el bucket privado `evidencias-incidentes`. Supabase ya no alojará la base de datos de esta plataforma; seguirá guardando adjuntos. No hagas público el bucket: la API descarga cada archivo solo después de verificar el JWT.
+2. En Render, abre el Blueprint vinculado al repositorio `davidcabezas238-droid/PLATAFORMA-INCIDENTES.2.0`, rama `main`, y selecciona sincronizar/aplicar los cambios del Blueprint. Revisa que aparezca la base PostgreSQL gratuita nueva `plataforma-incidentes-db` junto con el servicio `plataforma-incidentes`. No basta con hacer un despliegue manual del servicio: debe aplicarse el recurso nuevo del Blueprint.
+3. Antes de confirmar, verifica que `INITIAL_ADMIN_EMAIL` y `INITIAL_ADMIN_PASSWORD` estén definidas como variables secretas en el Environment del servicio web. La nueva base inicia vacía y necesita esas variables para crear el primer administrador. Usa una contraseña única de al menos 12 caracteres; nunca la compartas en el chat.
+4. En el Environment del servicio, conserva `STORAGE_DRIVER=supabase`, el bucket `evidencias-incidentes` y completa `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY` usando la Project URL y la clave secreta `service_role` de Supabase. No compartas ni publiques estas credenciales. `JWT_SECRET` se genera automáticamente.
+5. Confirma la sincronización del Blueprint. Render crea PostgreSQL y configura las conexiones; el contenedor aplica las migraciones Prisma al arrancar. Espera a que la base y el servicio estén disponibles, comprueba `/healthz` y luego inicia sesión con las credenciales iniciales.
+6. Cuando hayas confirmado que el administrador puede iniciar sesión, elimina `INITIAL_ADMIN_EMAIL` y `INITIAL_ADMIN_PASSWORD` del servicio y vuelve a desplegar.
 
 Render termina HTTPS y reenvía las solicitudes al servidor HTTP dentro del contenedor. El health check `/healthz` también consulta PostgreSQL: devuelve `503` cuando no puede llegar a la base. Las solicitudes y errores se registran como JSON con identificador de solicitud; no se registran cuerpos ni contraseñas.
 
-El plan gratuito de Supabase incluye 500 MB de base de datos y 1 GB de almacenamiento de archivos, y pausa los proyectos inactivos durante una semana. Render Free puede tardar aproximadamente un minuto en despertar; su disco es efímero, por lo que los adjuntos se guardan en Supabase Storage. Estos límites hacen que la combinación sirva para una demostración académica, no para producción.
+Render Free puede tardar aproximadamente un minuto en despertar y su disco de servicio es efímero; por eso los adjuntos permanecen en Supabase Storage. La base de datos gratuita Render tiene 1 GB y expira a los 30 días; al expirar, queda inaccesible hasta actualizarla y puede ser eliminada al acabar el periodo de gracia. Esta combinación sirve solo para una demostración académica, no para producción. Conserva una exportación independiente de cualquier dato que necesites antes de la fecha de expiración.
 
-La migración cambia la base de datos de MySQL a PostgreSQL y el almacenamiento de adjuntos a Supabase Storage. **No copia automáticamente los registros ni los archivos de la base de datos MySQL anterior**; la nueva base empieza vacía. Los archivos locales de `BACK-END/uploads/` tampoco se publican en Git y no se transfieren automáticamente.
+La nueva base de Render empieza vacía: **no importa automáticamente los usuarios ni los incidentes que actualmente estén en la base PostgreSQL de Supabase**. La base antigua no se borra y se puede consultar desde Supabase, pero la aplicación dejará de usarla tras el cambio. Los metadatos de adjuntos tampoco se copian; los objetos existentes siguen en el bucket de Supabase, pero no estarán vinculados a incidentes en la base nueva. Los archivos locales de `BACK-END/uploads/` tampoco se publican en Git ni se transfieren automáticamente.
+
+La conexión con Render PostgreSQL es solo para esta nueva base de datos. La suite automatizada de GitHub Actions sigue usando su propio PostgreSQL efímero de prueba; no conecta a la base de producción.
 
 `GET /incidentes` devuelve `{ items, total, page, pageSize, totalPages, resumen }`. Admite `page` y `pageSize` (entre 1 y 100); los filtros `q`, `prioridad` y `estado` se aplican antes de paginar.
 

@@ -1,3 +1,10 @@
+databases:
+  - name: plataforma-incidentes-db
+    databaseName: plataforma_incidentes
+    user: plataforma_incidentes
+    plan: free
+    postgresMajorVersion: "16"
+
 services:
   - type: web
     name: plataforma-incidentes
@@ -18,9 +25,13 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: DATABASE_URL
-        sync: false
+        fromDatabase:
+          name: plataforma-incidentes-db
+          property: connectionString
       - key: DIRECT_URL
-        sync: false
+        fromDatabase:
+          name: plataforma-incidentes-db
+          property: connectionString
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
