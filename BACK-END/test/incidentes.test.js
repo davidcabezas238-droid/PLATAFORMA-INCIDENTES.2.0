@@ -10,7 +10,6 @@ const modelo = require('../modelos/incidentes.model');
 const usuariosModelo = require('../modelos/usuarios.model');
 const app = require('../index');
 let usuarioAdministrador;
-let administradorReserva;
 let incidentePhishing;
 const incidentesDePrueba = new Set();
 
@@ -18,12 +17,6 @@ before(async () => {
   usuarioAdministrador = await usuariosModelo.crear({
     correo: `incidentes.admin.${randomUUID()}@example.invalid`,
     clave: await bcrypt.hash('PruebaSegura-2026!', 12),
-    rol: 'admin',
-    activo: true,
-  });
-  administradorReserva = await usuariosModelo.crear({
-    correo: `incidentes.reserva.${randomUUID()}@example.invalid`,
-    clave: await bcrypt.hash('ReservaSegura-2026!', 12),
     rol: 'admin',
     activo: true,
   });
@@ -38,8 +31,9 @@ before(async () => {
 after(async () => {
   for (const id of incidentesDePrueba) await modelo.eliminar(id);
   if (incidentePhishing) await modelo.eliminar(incidentePhishing.id);
-  if (usuarioAdministrador) await usuariosModelo.eliminar(usuarioAdministrador.id);
-  if (administradorReserva) await usuariosModelo.eliminar(administradorReserva.id);
+  if (usuarioAdministrador) {
+    await modelo.prisma.usuario.deleteMany({ where: { id: usuarioAdministrador.id } });
+  }
 });
 
 function ejecutarCrear(body) {

@@ -5,12 +5,12 @@ const { once } = require("node:events");
 const { randomUUID } = require("node:crypto");
 const bcrypt = require("bcryptjs");
 const modelo = require("../modelos/usuarios.model");
+const prisma = require("../modelos/prisma");
 const app = require("../index");
 
 let servidor;
 let baseUrl;
 let administrador;
-let administradorReserva;
 let tokenAdmin;
 let usuarioCreado;
 
@@ -18,12 +18,6 @@ before(async () => {
     administrador = await modelo.crear({
         correo: `usuarios.admin.${randomUUID()}@example.invalid`,
         clave: await bcrypt.hash("AdministradorPrueba-2026!", 12),
-        rol: "admin",
-        activo: true,
-    });
-    administradorReserva = await modelo.crear({
-        correo: `usuarios.reserva.${randomUUID()}@example.invalid`,
-        clave: await bcrypt.hash("ReservaSegura-2026!", 12),
         rol: "admin",
         activo: true,
     });
@@ -45,9 +39,8 @@ before(async () => {
 
 after(async () => {
     if (servidor) await new Promise((resolve) => servidor.close(resolve));
-    if (usuarioCreado) await modelo.eliminar(usuarioCreado.id);
-    if (administrador) await modelo.eliminar(administrador.id);
-    if (administradorReserva) await modelo.eliminar(administradorReserva.id);
+    const ids = [usuarioCreado?.id, administrador?.id].filter(Number.isInteger);
+    if (ids.length) await prisma.usuario.deleteMany({ where: { id: { in: ids } } });
 });
 
 function auth(token = tokenAdmin) {
@@ -147,4 +140,9 @@ test("no se puede eliminar ni degradar al último administrador activo", async (
         body: JSON.stringify({ rol: "tecnico" }),
     });
     assert.equal(degradarse.status, 409);
+    await assert.rejects(modelo.eliminar(administrador.id), (error) => error.statusCode === 409);
+    await assert.rejects(
+        modelo.actualizar(administrador.id, { rol: "tecnico" }),
+        (error) => error.statusCode === 409,
+    );
 });

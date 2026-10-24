@@ -58,7 +58,7 @@ npm install
 npx prisma generate
 npx prisma migrate deploy
 npm run lint
-npm test -- --test-force-exit --test-reporter=spec
+npm test -- --test-force-exit --test-concurrency=1 --test-reporter=spec
 npm start
 ```
 
@@ -109,8 +109,9 @@ Los endpoints de incidentes requieren `Authorization: Bearer <token>`.
 
 ## Validación
 
+- GitHub Actions ejecuta lint, migraciones PostgreSQL y pruebas en cada push y pull request hacia `main`; consulta la pestaña **Actions** del repositorio. El workflow usa una base de datos efímera y no necesita secretos de producción.
 - `npm run lint` analiza JavaScript del backend y frontend con ESLint.
-- `npm test -- --test-force-exit --test-reporter=spec` ejecuta pruebas de reglas de negocio, usuarios, autorización, persistencia y adjuntos. Requiere una base PostgreSQL de pruebas configurada en `BACK-END/.env`.
+- `npm test -- --test-force-exit --test-concurrency=1 --test-reporter=spec` ejecuta pruebas de reglas de negocio, usuarios, autorización, persistencia y adjuntos en serie. Requiere una base PostgreSQL de pruebas configurada en `BACK-END/.env`.
 - `GET /healthz` comprueba disponibilidad de la aplicación y conectividad con PostgreSQL.
 
 Consulta [la documentación técnica](./docs/ARQUITECTURA-TECNICA.md), [el manual de usuario](./docs/MANUAL-USUARIO.md), [la guía de defensa](./docs/DEFENSA.md), [la presentación](./docs/PRESENTACION.html) y [la lista de evidencias](./docs/EVIDENCIAS.md).
