@@ -87,6 +87,10 @@ jobs:
           set -euo pipefail
           : "${RENDER_API_KEY:?Configure the production environment secret RENDER_API_KEY}"
           : "${RENDER_SERVICE_ID:?Configure the production environment secret RENDER_SERVICE_ID}"
+          if [[ ! "$RENDER_SERVICE_ID" =~ ^srv-[0-9a-z]{20}$ ]]; then
+            echo "RENDER_SERVICE_ID must be the Render web service ID (srv- followed by 20 lowercase letters or digits)" >&2
+            exit 1
+          fi
 
       - name: Verify Render service configuration
         env:
@@ -94,11 +98,11 @@ jobs:
           RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
         run: |
           set -euo pipefail
-          service="$(curl --fail --silent --show-error --max-time 30 \
+          service="$(curl --fail-with-body --silent --show-error --max-time 30 \
             --url "https://api.render.com/v1/services/${RENDER_SERVICE_ID}" \
             --header "Authorization: ******")"
           service_name="$(jq -er '.name' <<< "$service")"
-          auto_deploy="$(jq -er '.autoDeployTrigger' <<< "$service")"
+          auto_deploy="$(jq -er '.autoDeployTrigger // (if .autoDeploy == "no" then "off" elif .autoDeploy == "yes" then "commit" else empty end)' <<< "$service")"
 
           if [[ "$service_name" != "plataforma-incidentes" ]]; then
             echo "RENDER_SERVICE_ID points to '$service_name', not plataforma-incidentes" >&2
