@@ -106,11 +106,38 @@ Benchmark local sobre PostgreSQL con 5.000 registros sintéticos: la consulta co
 
 Los endpoints de incidentes requieren `Authorization: Bearer <token>`.
 
+## Integración y despliegue continuo (CI/CD)
+
+El workflow `.github/workflows/ci.yml` implementa dos etapas encadenadas:
+
+1. **CI:** en pushes y pull requests a `main`, levanta PostgreSQL efímero, instala dependencias con `npm ci`, genera Prisma Client, ejecuta migraciones, ESLint y pruebas. Los pull requests solo validan; no despliegan.
+2. **CD:** únicamente después de que CI pase en un push a `main` o una ejecución manual de `workflow_dispatch` en `main`, valida el servicio y Auto-Deploy de Render, solicita desplegar exactamente el commit validado, espera el estado `live`, confirma el SHA del despliegue y consulta `/healthz`. Un fallo de configuración, despliegue, SHA o health check hace fallar el job.
+
+El servicio de Render debe tener **Auto-Deploy desactivado**. El Blueprint declara `autoDeployTrigger: "off"` para que los pushes no desplieguen por fuera de GitHub Actions; el workflow CD es el único que inicia despliegues automáticos. En la primera activación, cambia Auto-Deploy a **Off** en **Render → servicio `plataforma-incidentes` → Settings** antes de publicar el workflow. Luego sincroniza el Blueprint para que Render aplique y mantenga esta configuración. No desactives el health check `/healthz`.
+
+### Configurar GitHub y Render
+
+Antes de publicar el workflow en `main`:
+
+1. En Render, abre **Settings** del servicio web y cambia **Auto-Deploy** a **Off**. Mantén conectado el servicio al repositorio y a la rama `main`; el cambio impide que Render publique antes de que CI pase.
+2. En GitHub, abre **Settings → Environments** y crea un entorno llamado `production`.
+3. En los secretos del entorno `production`, agrega:
+
+   - `RENDER_API_KEY`: API key de Render. Trátala como credencial de producción; no la pegues en el repositorio, YAML, logs, capturas ni chat. Si el workspace permite limitar su alcance, usa el mínimo necesario.
+   - `RENDER_SERVICE_ID`: identificador del servicio web de Render `plataforma-incidentes` (no el ID de la base PostgreSQL).
+
+4. Publica el workflow y el Blueprint actualizado en `main`. En Render, sincroniza el Blueprint y comprueba que Auto-Deploy siga en **Off**.
+5. En **GitHub → Actions**, confirma que `Lint and test` termina correctamente y después que `Deploy to Render` verifica el SHA y el health check.
+
+Si necesitas ejecutar el pipeline sin hacer un nuevo push, abre **Actions → CI/CD → Run workflow** y selecciona `main`. Esta ejecución vuelve a ejecutar CI y, si pasa, despliega ese mismo commit. Los pull requests nunca ejecutan el deploy. Protege `main` y exige el check `Lint and test` antes de permitir merges. No uses secretos de producción en pull requests de forks.
+
+Si faltan secretos, el job CD falla explícitamente. Hasta que se configure el entorno `production`, se desactive y sincronice Auto-Deploy y se complete un run exitoso de ambos jobs, **el CD no está operativo/verificado en remoto**. El código del workflow por sí solo no configura secretos ni modifica el panel de Render. Guarda el enlace del run y el SHA como evidencia.
+
 ## Validación
 
-- GitHub Actions ejecuta lint, migraciones PostgreSQL y pruebas en cada push y pull request hacia `main`; consulta la pestaña **Actions** del repositorio. El workflow usa una base de datos efímera y no necesita secretos de producción.
+- GitHub Actions ejecuta lint, migraciones PostgreSQL y pruebas en cada push y pull request hacia `main`; consulta la pestaña **Actions** del repositorio. El job CI usa una base de datos efímera y no necesita secretos de producción.
 - `npm run lint` analiza JavaScript del backend y frontend con ESLint.
 - `npm test -- --test-force-exit --test-concurrency=1 --test-reporter=spec` ejecuta pruebas de reglas de negocio, usuarios, autorización, persistencia y adjuntos en serie. Requiere una base PostgreSQL de pruebas configurada en `BACK-END/.env`.
 - `GET /healthz` comprueba disponibilidad de la aplicación y conectividad con PostgreSQL.
 
-Consulta el [informe técnico en PDF](./docs/INFORME-TECNICO.pdf), su [fuente HTML](./docs/INFORME-TECNICO.html), la [documentación técnica](./docs/ARQUITECTURA-TECNICA.md), el [manual de usuario](./docs/MANUAL-USUARIO.md), la [guía de defensa](./docs/DEFENSA.md), la [presentación](./docs/PRESENTACION.html) y la [lista de evidencias](./docs/EVIDENCIAS.md).
+Consulta la [documentación técnica](./docs/ARQUITECTURA-TECNICA.md), el [manual de usuario](./docs/MANUAL-USUARIO.md) y la [presentación](./docs/PRESENTACION.html).

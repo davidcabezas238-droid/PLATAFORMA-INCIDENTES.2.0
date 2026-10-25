@@ -98,14 +98,16 @@ La suite crea cuentas e incidentes únicos y los elimina al finalizar. La compro
 El workflow `.github/workflows/ci.yml` implementa una cadena de dos jobs:
 
 1. `verify` ejecuta PostgreSQL efímero, `npm ci`, generación de Prisma Client, migraciones, ESLint y pruebas en pushes y pull requests a `main`.
-2. `deploy` depende de `verify` y solo corre en un push a `main`. Solicita a la API Render desplegar el SHA exacto del push, espera el estado `live`, comprueba que el deploy corresponda al mismo SHA y verifica `GET /healthz`. Los PR no ejecutan el despliegue. Errores de API, build, estado final, SHA o health check hacen fallar el job.
+2. `deploy` depende de `verify` y solo corre en un push o ejecución manual de `workflow_dispatch` sobre `main`. Verifica por API que el ID corresponde al servicio `plataforma-incidentes` y que Auto-Deploy está desactivado; después solicita el SHA exacto validado, espera el estado `live`, comprueba el mismo SHA y verifica `GET /healthz`. Los PR no ejecutan el despliegue. Errores de configuración, API, build, estado final, SHA o health check hacen fallar el job. El entorno `production` de GitHub limita los secretos de despliegue.
 
-Antes de publicar/combinar el workflow CD en `main`, configura los secretos siguientes y desactiva **Auto-Deploy** desde **Settings** del servicio web Render, para impedir una publicación antes de CI. Conserva el repositorio conectado a la rama `main`. En **GitHub → Settings → Secrets and variables → Actions** configura:
+El Blueprint `render.yaml` establece `autoDeployTrigger: "off"` para que GitHub Actions controle los despliegues. Antes de publicar el workflow por primera vez, cambia **Auto-Deploy** a **Off** en **Settings** del servicio web de Render para impedir que un push inicie un despliegue antes de CI. Conserva el repositorio conectado a `main`; tras publicar, sincroniza el Blueprint y verifica que el auto-deploy siga desactivado.
+
+En **GitHub → Settings → Environments**, crea el entorno `production` y configura allí estos secretos:
 
 - `RENDER_API_KEY`: credencial secreta de la API Render; no registrarla en código ni logs y limitar su alcance si el workspace ofrece esa opción.
 - `RENDER_SERVICE_ID`: ID del servicio web Render `plataforma-incidentes`, no el ID de PostgreSQL.
 
-Si se ejecuta sin secretos, el job CD falla explícitamente. Hasta configurar los secretos, dejar Auto-Deploy desactivado y observar un job de despliegue exitoso en Actions, el CD está implementado en el repositorio, pero no está activado ni verificado en el entorno remoto. El CI no necesita las credenciales de producción. La prueba de pipeline exitosa más reciente anterior a este CD no debe presentarse como prueba de un despliegue continuo.
+Si se ejecuta sin secretos, el job CD falla explícitamente. Se puede iniciar una ejecución manual desde **Actions → CI/CD → Run workflow** sobre `main`; esta repite CI y despliega solo si pasa. Hasta configurar el entorno, desactivar/sincronizar Auto-Deploy y observar un run exitoso en Actions, el CD no está verificado en remoto. El CI no necesita credenciales de producción; los pull requests no reciben esos secretos ni despliegan.
 
 ## Límites conocidos
 
