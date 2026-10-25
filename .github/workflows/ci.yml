@@ -100,7 +100,7 @@ jobs:
           set -euo pipefail
           if ! services="$(curl --fail-with-body --silent --show-error --max-time 30 \
             --url "https://api.render.com/v1/services?name=plataforma-incidentes&limit=20" \
-            --header "Authorization: ******")"; then
+            --header "Authorization: Bearer ${RENDER_API_KEY}")"; then
             echo "Render service list request failed; API response: $services" >&2
             exit 1
           fi
