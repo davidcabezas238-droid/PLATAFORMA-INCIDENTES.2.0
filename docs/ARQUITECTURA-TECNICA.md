@@ -93,6 +93,20 @@ npm test -- --test-force-exit --test-reporter=spec
 
 La suite crea cuentas e incidentes únicos y los elimina al finalizar. La comprobación de conectividad no sustituye pruebas de carga, recuperación ante desastres ni auditoría externa.
 
+## Integración y despliegue continuo (CI/CD)
+
+El workflow `.github/workflows/ci.yml` implementa una cadena de dos jobs:
+
+1. `verify` ejecuta PostgreSQL efímero, `npm ci`, generación de Prisma Client, migraciones, ESLint y pruebas en pushes y pull requests a `main`.
+2. `deploy` depende de `verify` y solo corre en un push a `main`. Solicita a la API Render desplegar el SHA exacto del push, espera el estado `live`, comprueba que el deploy corresponda al mismo SHA y verifica `GET /healthz`. Los PR no ejecutan el despliegue. Errores de API, build, estado final, SHA o health check hacen fallar el job.
+
+Antes de publicar/combinar el workflow CD en `main`, configura los secretos siguientes y desactiva **Auto-Deploy** desde **Settings** del servicio web Render, para impedir una publicación antes de CI. Conserva el repositorio conectado a la rama `main`. En **GitHub → Settings → Secrets and variables → Actions** configura:
+
+- `RENDER_API_KEY`: credencial secreta de la API Render; no registrarla en código ni logs y limitar su alcance si el workspace ofrece esa opción.
+- `RENDER_SERVICE_ID`: ID del servicio web Render `plataforma-incidentes`, no el ID de PostgreSQL.
+
+Si se ejecuta sin secretos, el job CD falla explícitamente. Hasta configurar los secretos, dejar Auto-Deploy desactivado y observar un job de despliegue exitoso en Actions, el CD está implementado en el repositorio, pero no está activado ni verificado en el entorno remoto. El CI no necesita las credenciales de producción. La prueba de pipeline exitosa más reciente anterior a este CD no debe presentarse como prueba de un despliegue continuo.
+
 ## Límites conocidos
 
 - Los niveles gratuitos pueden suspender servicios, limitar recursos o cambiar sus condiciones.
