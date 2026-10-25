@@ -98,19 +98,20 @@ jobs:
           RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
         run: |
           set -euo pipefail
-          if ! service="$(curl --fail-with-body --silent --show-error --max-time 30 \
-            --url "https://api.render.com/v1/services/${RENDER_SERVICE_ID}" \
+          if ! services="$(curl --fail-with-body --silent --show-error --max-time 30 \
+            --url "https://api.render.com/v1/services?name=plataforma-incidentes&limit=20" \
             --header "Authorization: ******")"; then
-            echo "Render service lookup failed; API response: $service" >&2
+            echo "Render service list request failed; API response: $services" >&2
             exit 1
           fi
-          service_name="$(jq -er '.name' <<< "$service")"
+          if ! service="$(jq -cer --arg serviceId "$RENDER_SERVICE_ID" \
+            '[.[] | (.service // .)] | map(select(.id == $serviceId and .name == "plataforma-incidentes")) | if length == 1 then .[0] else error("RENDER_SERVICE_ID does not identify plataforma-incidentes") end' \
+            <<< "$services")"; then
+            echo "Render did not return the configured plataforma-incidentes service" >&2
+            exit 1
+          fi
           auto_deploy="$(jq -er '.autoDeployTrigger // (if .autoDeploy == "no" then "off" elif .autoDeploy == "yes" then "commit" else empty end)' <<< "$service")"
 
-          if [[ "$service_name" != "plataforma-incidentes" ]]; then
-            echo "RENDER_SERVICE_ID points to '$service_name', not plataforma-incidentes" >&2
-            exit 1
-          fi
           if [[ "$auto_deploy" != "off" ]]; then
             echo "Disable Render Auto-Deploy before running production CD (current: $auto_deploy)" >&2
             exit 1
